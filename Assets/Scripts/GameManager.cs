@@ -12,9 +12,16 @@ public class GameManager : MonoBehaviour
     private bool foundWarningCard = false;
     private readonly List<Card> flippedCards = new();
 
+    private SoundManager _soundManager;
+
     void Awake()
     {
         Instance = this;
+    }
+
+    void Start()
+    {
+        _soundManager = SoundManager.Instance;
     }
 
     public void SetCardCount(int count)
@@ -26,9 +33,11 @@ public class GameManager : MonoBehaviour
     {
         if(card.UniqueId == int.MinValue)
         {
+            _soundManager.DeathCardSound();
+
             if (foundWarningCard)
             {
-                Debug.Log("GAME OVER!");
+                GameOver();
                 return;
             }
 
@@ -57,15 +66,23 @@ public class GameManager : MonoBehaviour
         {
             matchStreak = 0;
             ResetNonMatchingCard(1);
+            _soundManager.PlayMismatchSound();
             return;
         }
 
+        Matching();
+    }
+
+    private void Matching()
+    {
         matchStreak++;
         ScoreManager.Instance.UpdateScore(matchStreak);
+        _soundManager.PlayMatchSound();
         flippedCards[0].HideCard();
         flippedCards[1].HideCard();
 
         cardCount -= 2;
+
         CheckWin();
     }
 
@@ -73,8 +90,20 @@ public class GameManager : MonoBehaviour
     {
         if(cardCount < 2)
         {
-            Debug.Log("YOU WON!");
+            LevelCompleted();
         }
+    }
+
+    private void LevelCompleted()
+    {
+        Debug.Log("YOU WON!");
+        _soundManager.PlayWinSound();
+    }
+
+    private void GameOver()
+    {
+        Debug.Log("GAME OVER!");
+        _soundManager.PlayGameOverSound();
     }
 
     private void ResetNonMatchingCard(int resetDelay)

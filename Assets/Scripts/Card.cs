@@ -63,6 +63,8 @@ public class Card : MonoBehaviour
     private IEnumerator FlipCard()
     {
         //Instead of an IEnumarator for every code animations I would normally use Dotween plugin but I followed you remark "avoid prebuilt frameworks or purchased assets"
+        SoundManager.Instance.PlayFlipSound();
+
         yield return StartCoroutine(FlipCardRotation(Vector3.zero, Vector3.up * 90, cardFront));
         transform.localScale = new Vector3(-1, 1, 1);
         yield return StartCoroutine(FlipCardRotation(Vector3.up * 90, Vector3.up * 180));
@@ -78,6 +80,8 @@ public class Card : MonoBehaviour
         yield return new WaitForSeconds(delay);
 
         GameManager.Instance.RemoveCard(this);
+
+        SoundManager.Instance.PlayFlipSound();
 
         yield return StartCoroutine(FlipCardRotation(Vector3.up * 180, Vector3.up * 90, cardBack));
         transform.localScale = new Vector3(1, 1, 1);
