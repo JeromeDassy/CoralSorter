@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
@@ -13,6 +14,9 @@ public class GameManager : MonoBehaviour
     private readonly List<Card> flippedCards = new();
 
     private SoundManager _soundManager;
+    private ScoreManager _scoreManager;
+    private TimeManager _timeManager;
+    private MenuManager _menuManager;
 
     void Awake()
     {
@@ -22,12 +26,56 @@ public class GameManager : MonoBehaviour
     void Start()
     {
         _soundManager = SoundManager.Instance;
+        _scoreManager = ScoreManager.Instance;
+        _timeManager = TimeManager.Instance;
+        _menuManager = MenuManager.Instance;
     }
 
-    public void SetCardCount(int count)
+    public void StartPreset(Text preset)
+    {
+        // Example text input: "2x2 ; 2x3 ; 3x3 ; ..."
+        string presetText = preset.text;
+        string[] entries = presetText.Split(';');
+
+        foreach (string entry in entries)
+        {
+            string trimmedEntry = entry.Trim();
+            if (string.IsNullOrEmpty(trimmedEntry)) continue;
+
+            string[] dimensions = trimmedEntry.Split('x');
+            if (dimensions.Length == 2 &&
+                int.TryParse(dimensions[0], out int x) &&
+                int.TryParse(dimensions[1], out int y))
+            {
+                StartGrid(x, y);
+            }
+            else
+            {
+                Debug.LogWarning($"Invalid entry format: {trimmedEntry}");
+            }
+        }
+    }
+
+    public void StartGrid(int x, int y)
+    {
+        ResetGame();
+
+        GridManager.Instance.StartGameWithGrid(x, y);
+        SetCardCount(x * y);
+
+        _menuManager.ShowHideMainMenu(false);
+    }
+
+    private void ResetGame()
+    {
+        flippedCards.Clear();
+        _scoreManager.ResetScore();
+    }
+
+    private void SetCardCount(int count)
     {
         cardCount = count;
-        TimeManager.Instance.StartCountdown(count);
+        _timeManager.StartCountdown(count);
     }
 
     public void CardFlipped(Card card)
@@ -77,7 +125,7 @@ public class GameManager : MonoBehaviour
     private void Matching()
     {
         matchStreak++;
-        ScoreManager.Instance.UpdateScore(matchStreak);
+        _scoreManager.UpdateScore(matchStreak);
         _soundManager.PlayMatchSound();
         flippedCards[0].HideCard();
         flippedCards[1].HideCard();
@@ -99,15 +147,18 @@ public class GameManager : MonoBehaviour
     {
         Debug.Log("YOU WON!");
 
-        TimeManager.Instance.StopCountdown(out int timeLeft);
-        ScoreManager.Instance.FinalScoreUpdate(timeLeft);
+        _timeManager.StopCountdown(out int timeLeft);
+        _scoreManager.FinalScoreUpdate(timeLeft);
 
         _soundManager.PlayWinSound();
+        _menuManager.ShowHideEndLevelMenu(true);
+
     }
 
     public void GameOver()
     {
         Debug.Log("GAME OVER!");
+        _menuManager.ShowHideGameOverMenu(true);
         _soundManager.PlayGameOverSound();
     }
 

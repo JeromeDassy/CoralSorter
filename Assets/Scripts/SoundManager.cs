@@ -45,5 +45,4 @@ public class SoundManager : MonoBehaviour
     {
         deathCardSound.Play();
     }
-
 }

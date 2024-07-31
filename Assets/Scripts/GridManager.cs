@@ -5,6 +5,8 @@ using System.Collections.Generic;
 [RequireComponent(typeof(GridLayoutGroup))]
 public class GridManager : MonoBehaviour
 {
+    public static GridManager Instance;
+
     [SerializeField] private GameObject cardPrefab;
     [SerializeField] private int rows = 3;
     [SerializeField] private int columns = 4;
@@ -17,14 +19,75 @@ public class GridManager : MonoBehaviour
     private List<Sprite> cardImages;
     private List<CardData> shuffledCardData;
     private GridLayoutGroup gridLayoutGroup;
+    private Queue<GameObject> cardPool = new Queue<GameObject>();
+    private int poolSize = 30; // Adjust as needed
+
+    private void Awake()
+    {
+        Instance = this;
+    }
 
     void Start()
     {
         gridLayoutGroup = GetComponent<GridLayoutGroup>();
         LoadCardImages();
+        InitializeCardPool();
+    }
+
+    public void StartGameWithGrid(int x, int y)
+    {
+        ResetGrid();
+
+        rows = x;
+        columns = y;
         SetGridLayout(rows, columns);
         ShuffleAndAssignImages();
         PlaceCards();
+    }
+
+    private void InitializeCardPool()
+    {
+        for (int i = 0; i < poolSize; i++)
+        {
+            GameObject cardObj = Instantiate(cardPrefab, transform);
+            cardObj.SetActive(false);
+            cardPool.Enqueue(cardObj);
+            cardObj.name += $"_{i}";
+        }
+    }
+
+    private GameObject GetPooledCard()
+    {
+        if (cardPool.Count > 0)
+        {
+            GameObject card = cardPool.Dequeue();
+            card.SetActive(true);
+            return card;
+        }
+        else
+        {
+            GameObject newCard = Instantiate(cardPrefab);
+            return newCard;
+        }
+    }
+
+    private void ReturnCardToPool(GameObject card)
+    {
+        card.SetActive(false);
+        cardPool.Enqueue(card);
+    }
+
+    private void ResetGrid()
+    {
+        if (shuffledCardData != null && shuffledCardData.Count > 1)
+        {
+            shuffledCardData.Clear();
+        }
+
+        foreach (Transform child in transform)
+        {
+            ReturnCardToPool(child.gameObject);
+        }
     }
 
     private void LoadCardImages()
@@ -40,8 +103,6 @@ public class GridManager : MonoBehaviour
 
     public void SetGridLayout(int x, int y)
     {
-        GameManager.Instance.SetCardCount(x * y);
-
         rows = Mathf.Min(x, y);
         columns = Mathf.Max(x, y);
         gridLayoutGroup.constraint = GridLayoutGroup.Constraint.FixedRowCount;
@@ -88,9 +149,9 @@ public class GridManager : MonoBehaviour
     {
         for (int i = 0; i < rows * columns; i++)
         {
-            GameObject card = Instantiate(cardPrefab, gridLayoutGroup.transform);
+            GameObject card = GetPooledCard();
+            //card.transform.SetParent(gridLayoutGroup.transform, false);
             card.GetComponent<Card>().SetCardData(shuffledCardData[i]);
-            card.name += $"_{i}";
         }
     }
 }
