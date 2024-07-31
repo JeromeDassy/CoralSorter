@@ -10,7 +10,10 @@ public class GridManager : MonoBehaviour
     [SerializeField] private int columns = 4;
     [SerializeField] private float spacing = 20f;
     [SerializeField] private Sprite oddCard;
-    
+
+    [Header("Select Card Graphics folder (Must Be Under Resources)")]
+    public FolderPath selectedFolder;
+
     private List<Sprite> cardImages;
     private List<CardData> shuffledCardData;
     private GridLayoutGroup gridLayoutGroup;
@@ -26,12 +29,18 @@ public class GridManager : MonoBehaviour
 
     private void LoadCardImages()
     {
-        cardImages = new List<Sprite>(Resources.LoadAll<Sprite>("Cards/FrontGraphics"));
+        if (string.IsNullOrEmpty(selectedFolder.path))
+        {
+            Debug.LogError("No Folder selected, fallback on default folder");
+            cardImages = new List<Sprite>(Resources.LoadAll<Sprite>("Cards/FrontGraphics"));
+            return;
+        }
+        cardImages = new List<Sprite>(Resources.LoadAll<Sprite>(selectedFolder.path));
     }
 
     public void SetGridLayout(int x, int y)
     {
-        GameManager.Instance.SetCardCount(x*y);
+        GameManager.Instance.SetCardCount(x * y);
 
         rows = Mathf.Min(x, y);
         columns = Mathf.Max(x, y);

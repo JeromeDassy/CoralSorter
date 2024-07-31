@@ -426,6 +426,8 @@ MonoBehaviour:
   columns: 4
   spacing: 20
   oddCard: {fileID: 21300000, guid: a38f6c89eb5e9b445bd235062cd1fe9c, type: 3}
+  selectedFolder:
+    path: Cards/FrontGraphics
 --- !u!1 &519420028
 GameObject:
   m_ObjectHideFlags: 0
