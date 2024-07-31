@@ -5,11 +5,11 @@ using System.Collections.Generic;
 [RequireComponent(typeof(GridLayoutGroup))]
 public class GridManager : MonoBehaviour
 {
-    public GameObject cardPrefab;
-    public int rows = 3;
-    public int columns = 4;
-    public float spacing = 20f;
-    public Sprite oddCard;
+    [SerializeField] private GameObject cardPrefab;
+    [SerializeField] private int rows = 3;
+    [SerializeField] private int columns = 4;
+    [SerializeField] private float spacing = 20f;
+    [SerializeField] private Sprite oddCard;
     
     private List<Sprite> cardImages;
     private List<CardData> shuffledCardData;
@@ -31,6 +31,7 @@ public class GridManager : MonoBehaviour
 
     public void SetGridLayout(int x, int y)
     {
+        GameManager.Instance.SetCardCount(x*y);
 
         rows = Mathf.Min(x, y);
         columns = Mathf.Max(x, y);
