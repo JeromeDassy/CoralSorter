@@ -27,6 +27,7 @@ public class GameManager : MonoBehaviour
     public void SetCardCount(int count)
     {
         cardCount = count;
+        TimeManager.Instance.StartCountdown(count);
     }
 
     public void CardFlipped(Card card)
@@ -97,10 +98,14 @@ public class GameManager : MonoBehaviour
     private void LevelCompleted()
     {
         Debug.Log("YOU WON!");
+
+        TimeManager.Instance.StopCountdown(out int timeLeft);
+        ScoreManager.Instance.FinalScoreUpdate(timeLeft);
+
         _soundManager.PlayWinSound();
     }
 
-    private void GameOver()
+    public void GameOver()
     {
         Debug.Log("GAME OVER!");
         _soundManager.PlayGameOverSound();
