@@ -19,6 +19,8 @@ public class GameManager : MonoBehaviour
     private MenuManager _menuManager;
     private GridManager _gridManager;
 
+    private bool IsPlaying { get; set; }
+
     private bool isPaused;
     public bool IsPaused
     {
@@ -59,8 +61,7 @@ public class GameManager : MonoBehaviour
 
     public int GetRemainingTime()
     {
-        _timeManager.GetCountdownTime(out int timeLeft);
-        return timeLeft;
+        return _timeManager.GetCountdownTime();
     }
 
     public List<CardData> GetGridState()
@@ -70,10 +71,11 @@ public class GameManager : MonoBehaviour
 
     public void SetGameState(int score, int remainingTime, List<CardData> cardDataList, int x, int y)
     {
+        IsPlaying = true;
         _scoreManager.SetScore(score);
+        _gridManager.LoadGrid(cardDataList, x, y, out int matchedCard);
+        SetCardCount((x * y) - matchedCard);
         _timeManager.SetCountdownTime(remainingTime);
-        _gridManager.LoadGrid(cardDataList, x, y);
-        SetCardCount(x * y);
         _menuManager.ShowHideMainMenu(false);
     }
     #endregion
@@ -98,6 +100,7 @@ public class GameManager : MonoBehaviour
 
     public void StartGrid(int x, int y)
     {
+        IsPlaying = true;
         _gridManager.StartGameWithGrid(x, y);
         SetCardCount(x * y);
         _menuManager.ShowHideMainMenu(false);
@@ -145,6 +148,9 @@ public class GameManager : MonoBehaviour
 
     public void GameOver()
     {
+        if (!IsPlaying) return;
+
+        IsPlaying = false;
         Debug.Log("GAME OVER!");
         _menuManager.ShowHideGameOverMenu(true);
         _soundManager.PlayGameOverSound();
@@ -161,7 +167,9 @@ public class GameManager : MonoBehaviour
 
     public void ResetGame()
     {
+        IsPlaying = false;
         IsPaused = false;
+        foundWarningCard = false;
         warningCard.SetActive(false);
         flippedCards.Clear();
         _scoreManager.ResetScore();
@@ -216,6 +224,7 @@ public class GameManager : MonoBehaviour
     private void LevelCompleted()
     {
         Debug.Log("YOU WON!");
+        IsPlaying = false;
         _timeManager.StopCountdown(out int timeLeft);
         _scoreManager.FinalScoreUpdate(timeLeft);
         _soundManager.PlayWinSound();

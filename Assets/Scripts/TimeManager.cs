@@ -7,7 +7,6 @@ public class TimeManager : MonoBehaviour
     public static TimeManager Instance;
 
     [SerializeField] private Text timerText;
-    [SerializeField] private int baseTime = 10;
 
     private int countdownTime;
     private Coroutine countdownRoutine;
@@ -25,19 +24,19 @@ public class TimeManager : MonoBehaviour
 
     public void StartCountdown(int cardCount)
     {
-        countdownTime = baseTime + (cardCount * 5); // Adjust formula as needed
+        countdownTime = cardCount * 5;
         StartCountdownRoutine();
     }
 
     public void StopCountdown(out int timeLeft)
     {
         StopCountdownRoutine();
-        timeLeft = countdownTime;
+        timeLeft = GetCountdownTime();
     }
 
-    public void GetCountdownTime(out int timeLeft)
+    public int GetCountdownTime()
     {
-        timeLeft = countdownTime;
+        return countdownTime;
     }
 
     public void SetCountdownTime(int time)
@@ -70,19 +69,14 @@ public class TimeManager : MonoBehaviour
 
     private IEnumerator Countdown()
     {
-        float startTime = Time.time;
-        float targetTime = startTime + countdownTime;
-
         while (countdownTime > 0)
         {
             if (!_gameManager.IsPaused)
             {
-                float remainingTime = targetTime - Time.time;
-                countdownTime = Mathf.Max(0, Mathf.CeilToInt(remainingTime));
                 UpdateTimerText();
+                countdownTime--;
             }
-
-            yield return null;
+            yield return new WaitForSeconds(1f);
         }
 
         _gameManager.GameOver();

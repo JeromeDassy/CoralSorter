@@ -60,20 +60,26 @@ public class GridManager : MonoBehaviour
         return cardDataList;
     }
 
-    public void LoadGrid(List<CardData> cardDataList, int x, int y)
+    public void LoadGrid(List<CardData> cardDataList, int x, int y, out int matchedCard)
     {
         ResetGrid();
         rows = x;
         columns = y;
         SetGridLayout();
 
+        int matched = 0;
         foreach (var cardData in cardDataList)
         {
             GameObject cardObject = GetPooledCard();
             Card card = cardObject.GetComponent<Card>();
             card.SetCardData(cardData);
             card.SetMatched(cardData.isMatched);
+            if (cardData.isMatched)
+            {
+                matched++;
+            }
         }
+        matchedCard = matched;
     }
     #endregion
 
