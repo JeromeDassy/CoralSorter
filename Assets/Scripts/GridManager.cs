@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 
 [RequireComponent(typeof(GridLayoutGroup))]
 public class GridManager : MonoBehaviour
@@ -22,13 +23,59 @@ public class GridManager : MonoBehaviour
     private readonly Queue<GameObject> cardPool = new Queue<GameObject>();
     private readonly int poolSize = 30;
 
-    private void Awake()
+    void Awake()
     {
         Instance = this;
         gridLayoutGroup = GetComponent<GridLayoutGroup>();
         LoadCardImages();
         InitializeCardPool();
     }
+
+    #region Save&Load
+    public Vector2 GetGridDimensions()
+    {
+        return new Vector2(rows, columns);
+    }
+
+    public List<CardData> GetCardDataList()
+    {
+        List<CardData> cardDataList = new List<CardData>();
+
+        int gridSize = rows * columns;
+        int i = 0;
+        foreach (Transform child in transform)
+        {
+            if(i == gridSize)
+            {
+                break;
+            }
+
+            Card card = child.GetComponent<Card>();
+            if (card != null)
+            {
+                cardDataList.Add(new CardData(card.GetCardFront(), card.UniqueId, card.IsMatched));
+            }
+            i++;
+        }
+        return cardDataList;
+    }
+
+    public void LoadGrid(List<CardData> cardDataList, int x, int y)
+    {
+        ResetGrid();
+        rows = x;
+        columns = y;
+        SetGridLayout();
+
+        foreach (var cardData in cardDataList)
+        {
+            GameObject cardObject = GetPooledCard();
+            Card card = cardObject.GetComponent<Card>();
+            card.SetCardData(cardData);
+            card.SetMatched(cardData.isMatched);
+        }
+    }
+    #endregion
 
     public void StartGameWithGrid(int x, int y)
     {
@@ -138,10 +185,12 @@ public class CardData
 {
     public Sprite image;
     public int uniqueId;
+    public bool isMatched;
 
-    public CardData(Sprite image, int uniqueId)
+    public CardData(Sprite image, int uniqueId, bool isMatched = false)
     {
         this.image = image;
         this.uniqueId = uniqueId;
+        this.isMatched = isMatched;
     }
 }

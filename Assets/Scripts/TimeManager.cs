@@ -18,7 +18,7 @@ public class TimeManager : MonoBehaviour
         Instance = this;
     }
 
-    private void Start()
+    void Start()
     {
         _gameManager = GameManager.Instance;
     }
@@ -33,6 +33,25 @@ public class TimeManager : MonoBehaviour
     {
         StopCountdownRoutine();
         timeLeft = countdownTime;
+    }
+
+    public void GetCountdownTime(out int timeLeft)
+    {
+        timeLeft = countdownTime;
+    }
+
+    public void SetCountdownTime(int time)
+    {
+        countdownTime = time;
+        UpdateTimerText();
+        StartCountdownRoutine();
+    }
+
+    public void ResetCountdown()
+    {
+        StopCountdownRoutine();
+        countdownTime = 0;
+        UpdateTimerText();
     }
 
     private void StartCountdownRoutine()
@@ -68,7 +87,6 @@ public class TimeManager : MonoBehaviour
 
         _gameManager.GameOver();
     }
-
 
     private void UpdateTimerText()
     {

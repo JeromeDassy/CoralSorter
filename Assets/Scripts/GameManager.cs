@@ -29,7 +29,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void Awake()
+    void Awake()
     {
         if (Instance == null)
         {
@@ -42,7 +42,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void Start()
+    void Start()
     {
         _soundManager = SoundManager.Instance;
         _scoreManager = ScoreManager.Instance;
@@ -50,6 +50,33 @@ public class GameManager : MonoBehaviour
         _menuManager = MenuManager.Instance;
         _gridManager = GridManager.Instance;
     }
+
+    #region Save&Load 
+    public int GetScore()
+    {
+        return _scoreManager.GetCurrentScore();
+    }
+
+    public int GetRemainingTime()
+    {
+        _timeManager.GetCountdownTime(out int timeLeft);
+        return timeLeft;
+    }
+
+    public List<CardData> GetGridState()
+    {
+        return _gridManager.GetCardDataList();
+    }
+
+    public void SetGameState(int score, int remainingTime, List<CardData> cardDataList, int x, int y)
+    {
+        _scoreManager.SetScore(score);
+        _timeManager.SetCountdownTime(remainingTime);
+        _gridManager.LoadGrid(cardDataList, x, y);
+        SetCardCount(x * y);
+        _menuManager.ShowHideMainMenu(false);
+    }
+    #endregion
 
     public void StartPreset(Text preset)
     {
@@ -138,6 +165,7 @@ public class GameManager : MonoBehaviour
         warningCard.SetActive(false);
         flippedCards.Clear();
         _scoreManager.ResetScore();
+        _timeManager.ResetCountdown();
         _gridManager.ResetGrid();
     }
 
@@ -170,8 +198,8 @@ public class GameManager : MonoBehaviour
         _scoreManager.UpdateScore(matchStreak);
         _soundManager.PlayMatchSound();
 
-        flippedCards[0].DisableCard();//Also remove the card
-        flippedCards[0].DisableCard();//the card 1 become 0
+        flippedCards[0].DisableCard();
+        flippedCards[0].DisableCard();
 
         cardCount -= 2;
         CheckWin();

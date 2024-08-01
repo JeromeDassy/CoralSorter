@@ -9,12 +9,14 @@ public class Card : MonoBehaviour
     [SerializeField] private Sprite cardBack;
     
     private bool isFlipped = false;
+    private bool cardInitialized = false;
 
     private Sprite cardFront;
     private Image cardImage;
     private Button cardButton;
     private Coroutine flipCardBackRoutine;
 
+    public bool IsMatched { get; private set; }
     public int UniqueId { get; private set; }
 
     private SoundManager _soundManager;
@@ -22,13 +24,39 @@ public class Card : MonoBehaviour
 
     void Start()
     {
+        InitCard();
+
+        _soundManager = SoundManager.Instance;
+        _gameManager = GameManager.Instance;
+    }
+
+    private void InitCard()
+    {
+        if (cardInitialized) return;
+
         cardImage = GetComponent<Image>();
         cardButton = GetComponent<Button>();
         cardButton.onClick.AddListener(OnCardClicked);
         cardImage.sprite = cardBack;
+        cardInitialized = true;
+    }
 
-        _soundManager = SoundManager.Instance;
-        _gameManager = GameManager.Instance;
+    public Sprite GetCardFront()
+    {
+        return cardFront;
+    }
+
+    public void SetMatched(bool matched)
+    {
+        InitCard();
+        IsMatched = matched;
+        if (matched)
+        {
+            cardImage.sprite = cardFront;
+            cardButton.interactable = false;
+            transform.rotation = Quaternion.Euler(Vector3.up * 180);
+            transform.localScale = new Vector3(-1, 1, 1);
+        }
     }
 
     public void SetCardData(CardData data)
@@ -52,6 +80,7 @@ public class Card : MonoBehaviour
 
     public void ResetCard()
     {
+        IsMatched = false;
         isFlipped = false;
         cardButton.interactable = true;
         cardImage.sprite = cardBack;
@@ -61,6 +90,7 @@ public class Card : MonoBehaviour
 
     public void DisableCard()
     {
+        IsMatched = true;
         CheckRunningBackRoutine();
         cardButton.interactable = false;
         _gameManager.RemoveCard(this);
@@ -113,7 +143,6 @@ public class Card : MonoBehaviour
 
         isFlipped = false;
     }
-
 
     private IEnumerator AnimFlipCardRotation(Vector3 fromRotation, Vector3 toRotation, Sprite newSprite = null)
     {
