@@ -20,7 +20,7 @@ public class GridManager : MonoBehaviour
     private List<CardData> shuffledCardData;
     private GridLayoutGroup gridLayoutGroup;
     private Queue<GameObject> cardPool = new Queue<GameObject>();
-    private int poolSize = 30; // Adjust as needed
+    private int poolSize = 30;
 
     private void Awake()
     {
@@ -43,6 +43,19 @@ public class GridManager : MonoBehaviour
         SetGridLayout(rows, columns);
         ShuffleAndAssignImages();
         PlaceCards();
+    }
+
+    public void ResetGrid()
+    {
+        if (shuffledCardData != null && shuffledCardData.Count > 1)
+        {
+            shuffledCardData.Clear();
+        }
+
+        foreach (Transform child in transform)
+        {
+            ReturnCardToPool(child.gameObject);
+        }
     }
 
     private void InitializeCardPool()
@@ -77,19 +90,6 @@ public class GridManager : MonoBehaviour
         cardPool.Enqueue(card);
     }
 
-    private void ResetGrid()
-    {
-        if (shuffledCardData != null && shuffledCardData.Count > 1)
-        {
-            shuffledCardData.Clear();
-        }
-
-        foreach (Transform child in transform)
-        {
-            ReturnCardToPool(child.gameObject);
-        }
-    }
-
     private void LoadCardImages()
     {
         if (string.IsNullOrEmpty(selectedFolder.path))
@@ -121,7 +121,6 @@ public class GridManager : MonoBehaviour
         int numPairs = (rows * columns) / 2;
         shuffledCardData = new List<CardData>();
 
-        // Duplicate images and assign unique IDs
         for (int i = 0; i < numPairs; i++)
         {
             int uniqueId = Random.Range(1000, 10000);
@@ -129,20 +128,12 @@ public class GridManager : MonoBehaviour
             shuffledCardData.Add(new CardData(cardImages[i], uniqueId));
         }
 
-        // If odd number of cards, add a unique image with a unique ID
         if ((rows * columns) % 2 != 0)
         {
             shuffledCardData.Add(new CardData(oddCard, int.MinValue));
         }
 
-        // Shuffle the card data
-        for (int i = 0; i < shuffledCardData.Count; i++)
-        {
-            CardData temp = shuffledCardData[i];
-            int randomIndex = Random.Range(i, shuffledCardData.Count);
-            shuffledCardData[i] = shuffledCardData[randomIndex];
-            shuffledCardData[randomIndex] = temp;
-        }
+        shuffledCardData.Shuffle();
     }
 
     private void PlaceCards()
@@ -150,7 +141,6 @@ public class GridManager : MonoBehaviour
         for (int i = 0; i < rows * columns; i++)
         {
             GameObject card = GetPooledCard();
-            //card.transform.SetParent(gridLayoutGroup.transform, false);
             card.GetComponent<Card>().SetCardData(shuffledCardData[i]);
         }
     }

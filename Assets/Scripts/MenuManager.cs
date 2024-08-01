@@ -26,8 +26,19 @@ public class MenuManager : MonoBehaviour
         }
     }
 
-    public void ShowHideMainMenu(bool show) => ShowMenu(mainMenu, show);
-    public void ShowHidePauseMenu(bool show) => ShowMenu(pauseMenu, show);
     public void ShowHideGameOverMenu(bool show) => ShowMenu(gameOverMenu, show);
     public void ShowHideEndLevelMenu(bool show) => ShowMenu(endLevelMenu, show);
+    public void ShowHideMainMenu(bool show)
+    {
+        ShowMenu(mainMenu, show);
+        if (show)
+        {
+            GameManager.Instance.IsPaused = false;
+        }
+    }
+    public void ShowHidePauseMenu(bool show)
+    {
+        ShowMenu(pauseMenu, show);
+        GameManager.Instance.IsPaused = show;
+    }
 }

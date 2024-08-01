@@ -6,64 +6,60 @@ public class TimeManager : MonoBehaviour
 {
     public static TimeManager Instance;
 
-    public int secondsPerCard = 3;
+    [SerializeField] private Text timerText;
+    [SerializeField] private int baseTime = 60;
 
-    [SerializeField] private Text countdownText;
-    private Coroutine countdownCoroutine;
-    private int currentTime;
+    private int countdownTime;
+    private Coroutine countdownRoutine;
 
     void Awake()
     {
         Instance = this;
     }
 
-    public void StartCountdown(int multiplier)
+    public void StartCountdown(int cardCount)
     {
-        if (countdownCoroutine != null)
-        {
-            StopCoroutine(countdownCoroutine);
-        }
-
-        currentTime = secondsPerCard * multiplier;
-        countdownCoroutine = StartCoroutine(Countdown());
-    }
-
-    private IEnumerator Countdown()
-    {
-        WaitForSeconds wait = new WaitForSeconds(1);
-
-        while (currentTime > 0)
-        {
-            countdownText.text = $"Time left: {currentTime}";
-            yield return wait;
-            currentTime--;
-        }
-
-        countdownText.text = "Time's up!";
-        OnCountdownEnd();
-    }
-
-    private void OnCountdownEnd()
-    {
-        if (GameManager.Instance != null)
-        {
-            GameManager.Instance.GameOver();
-        }
+        countdownTime = baseTime + (cardCount * 5); // Adjust formula as needed
+        StartCountdownRoutine();
     }
 
     public void StopCountdown(out int timeLeft)
     {
-        if (countdownCoroutine != null)
-        {
-            StopCoroutine(countdownCoroutine);
-            countdownCoroutine = null;
-        }
-        timeLeft = currentTime;
+        StopCountdownRoutine();
+        timeLeft = countdownTime;
     }
 
-    public void ResetCountdown()
+    private void StartCountdownRoutine()
     {
-        StopCountdown(out _);
-        countdownText.text = "Time left: " + currentTime;
+        countdownRoutine = StartCoroutine(Countdown());
+    }
+
+    private void StopCountdownRoutine()
+    {
+        if (countdownRoutine != null)
+        {
+            StopCoroutine(countdownRoutine);
+            countdownRoutine = null;
+        }
+    }
+
+    private IEnumerator Countdown()
+    {
+        while (countdownTime > 0)
+        {
+            if (!GameManager.Instance.IsPaused)
+            {
+                UpdateTimerText();
+                countdownTime--;
+            }
+            yield return new WaitForSeconds(1f);
+        }
+
+        GameManager.Instance.GameOver();
+    }
+
+    private void UpdateTimerText()
+    {
+        timerText.text = $"Time: {countdownTime}";
     }
 }

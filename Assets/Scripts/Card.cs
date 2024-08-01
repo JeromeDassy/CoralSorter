@@ -62,7 +62,6 @@ public class Card : MonoBehaviour
 
     private IEnumerator FlipCard()
     {
-        //Instead of an IEnumarator for every code animations I would normally use Dotween plugin but I followed you remark "avoid prebuilt frameworks or purchased assets"
         SoundManager.Instance.PlayFlipSound();
 
         yield return StartCoroutine(FlipCardRotation(Vector3.zero, Vector3.up * 90, cardFront));
@@ -76,8 +75,12 @@ public class Card : MonoBehaviour
 
     private IEnumerator FlipCardBack(int delay)
     {
-        //Instead of an IEnumarator for every code animations I would normally use Dotween plugin but I followed you remark "avoid prebuilt frameworks or purchased assets"
         yield return new WaitForSeconds(delay);
+
+        while (GameManager.Instance.IsPaused)
+        {
+            yield return null;
+        }
 
         GameManager.Instance.RemoveCard(this);
 
@@ -93,21 +96,24 @@ public class Card : MonoBehaviour
 
     private IEnumerator FlipCardRotation(Vector3 fromRotation, Vector3 toRotation, Sprite newSprite = null)
     {
-        //Instead of an IEnumarator for every code animations I would normally use Dotween plugin but I followed you remark "avoid prebuilt frameworks or purchased assets"
         float time = 0.2f;
         float halfTime = time / 2f;
         float elapsedTime = 0f;
 
         while (elapsedTime < halfTime)
         {
-            transform.rotation = Quaternion.Slerp(Quaternion.Euler(fromRotation), Quaternion.Euler(toRotation), (elapsedTime / halfTime));
-            elapsedTime += Time.deltaTime;
+            if (!GameManager.Instance.IsPaused)
+            {
+                transform.rotation = Quaternion.Slerp(Quaternion.Euler(fromRotation), Quaternion.Euler(toRotation), elapsedTime / halfTime);
+                elapsedTime += Time.deltaTime;
+            }
             yield return null;
         }
 
         transform.rotation = Quaternion.Euler(toRotation);
-
         if (newSprite != null)
+        {
             cardImage.sprite = newSprite;
+        }
     }
 }

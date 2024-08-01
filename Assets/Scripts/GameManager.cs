@@ -17,6 +17,18 @@ public class GameManager : MonoBehaviour
     private ScoreManager _scoreManager;
     private TimeManager _timeManager;
     private MenuManager _menuManager;
+    private GridManager _gridManager;
+
+    private bool isPaused = false;
+    public bool IsPaused
+    {
+        get => isPaused;
+        set
+        {
+            isPaused = value;
+            OnPauseChanged(isPaused);
+        }
+    }
 
     void Awake()
     {
@@ -29,6 +41,7 @@ public class GameManager : MonoBehaviour
         _scoreManager = ScoreManager.Instance;
         _timeManager = TimeManager.Instance;
         _menuManager = MenuManager.Instance;
+        _gridManager = GridManager.Instance;
     }
 
     public void StartPreset(Text preset)
@@ -60,16 +73,40 @@ public class GameManager : MonoBehaviour
     {
         ResetGame();
 
-        GridManager.Instance.StartGameWithGrid(x, y);
+        _gridManager.StartGameWithGrid(x, y);
         SetCardCount(x * y);
 
         _menuManager.ShowHideMainMenu(false);
+    }
+
+    public void RemoveCard(Card card)
+    {
+        flippedCards.Remove(card);
+    }
+
+    public void PlayPauseGame(bool pause)
+    {
+        IsPaused = pause;
+    }
+
+    public void GameOver()
+    {
+        Debug.Log("GAME OVER!");
+        _menuManager.ShowHideGameOverMenu(true);
+        _soundManager.PlayGameOverSound();
+    }
+
+    private void OnPauseChanged(bool pause)
+    {
+
     }
 
     private void ResetGame()
     {
         flippedCards.Clear();
         _scoreManager.ResetScore();
+        IsPaused = false; // Ensure the game is not paused at the start
+        _gridManager.ResetGrid();
     }
 
     private void SetCardCount(int count)
@@ -80,7 +117,7 @@ public class GameManager : MonoBehaviour
 
     public void CardFlipped(Card card)
     {
-        if(card.UniqueId == int.MinValue)
+        if (card.UniqueId == int.MinValue)
         {
             _soundManager.DeathCardSound();
 
@@ -137,7 +174,7 @@ public class GameManager : MonoBehaviour
 
     private void CheckWin()
     {
-        if(cardCount < 2)
+        if (cardCount < 2)
         {
             LevelCompleted();
         }
@@ -155,21 +192,9 @@ public class GameManager : MonoBehaviour
 
     }
 
-    public void GameOver()
-    {
-        Debug.Log("GAME OVER!");
-        _menuManager.ShowHideGameOverMenu(true);
-        _soundManager.PlayGameOverSound();
-    }
-
     private void ResetNonMatchingCard(int resetDelay)
     {
         flippedCards[0].ResetCard(resetDelay);
         flippedCards[1].ResetCard(resetDelay);
-    }
-
-    public void RemoveCard(Card card)
-    {
-        flippedCards.Remove(card);
     }
 }
