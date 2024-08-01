@@ -4,13 +4,13 @@ using UnityEngine.UI;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager Instance;
+    public static GameManager Instance { get; private set; }
 
     [SerializeField] private GameObject warningCard;
 
     private int cardCount;
-    private int matchStreak = 0;
-    private bool foundWarningCard = false;
+    private int matchStreak;
+    private bool foundWarningCard;
     private readonly List<Card> flippedCards = new();
 
     private SoundManager _soundManager;
@@ -19,23 +19,30 @@ public class GameManager : MonoBehaviour
     private MenuManager _menuManager;
     private GridManager _gridManager;
 
-    private bool isPaused = false;
+    private bool isPaused;
     public bool IsPaused
     {
         get => isPaused;
         set
         {
             isPaused = value;
-            OnPauseChanged(isPaused);
         }
     }
 
-    void Awake()
+    private void Awake()
     {
-        Instance = this;
+        if (Instance == null)
+        {
+            Instance = this;
+            DontDestroyOnLoad(gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
 
-    void Start()
+    private void Start()
     {
         _soundManager = SoundManager.Instance;
         _scoreManager = ScoreManager.Instance;
@@ -46,16 +53,9 @@ public class GameManager : MonoBehaviour
 
     public void StartPreset(Text preset)
     {
-        // Example text input: "2x2 ; 2x3 ; 3x3 ; ..."
-        string presetText = preset.text;
-        string[] entries = presetText.Split(';');
-
-        foreach (string entry in entries)
+        foreach (var entry in preset.text.Split(';'))
         {
-            string trimmedEntry = entry.Trim();
-            if (string.IsNullOrEmpty(trimmedEntry)) continue;
-
-            string[] dimensions = trimmedEntry.Split('x');
+            var dimensions = entry.Trim().Split('x');
             if (dimensions.Length == 2 &&
                 int.TryParse(dimensions[0], out int x) &&
                 int.TryParse(dimensions[1], out int y))
@@ -64,18 +64,15 @@ public class GameManager : MonoBehaviour
             }
             else
             {
-                Debug.LogWarning($"Invalid entry format: {trimmedEntry}");
+                Debug.LogWarning($"Invalid entry format: {entry}");
             }
         }
     }
 
     public void StartGrid(int x, int y)
     {
-        ResetGame();
-
         _gridManager.StartGameWithGrid(x, y);
         SetCardCount(x * y);
-
         _menuManager.ShowHideMainMenu(false);
     }
 
@@ -83,31 +80,35 @@ public class GameManager : MonoBehaviour
     {
         if (card.UniqueId == int.MinValue)
         {
-            _soundManager.DeathCardSound();
-
-            if (foundWarningCard)
-            {
-                GameOver();
-                return;
-            }
-
-            warningCard.SetActive(true);
-            foundWarningCard = true;
-            matchStreak = 0;
+            HandleWarningCard();
+            return;
         }
 
         flippedCards.Add(card);
 
         if (flippedCards.Count > 2)
         {
-            ResetNonMatchingCard(0);
-            return;
+            ResetFlippedCards(0);
         }
-
+        
         if (flippedCards.Count == 2)
         {
             CheckMatch();
         }
+    }
+
+    private void HandleWarningCard()
+    {
+        if (foundWarningCard)
+        {
+            GameOver();
+            return;
+        }
+
+        _soundManager.DeathCardSound();
+        warningCard.SetActive(true);
+        foundWarningCard = true;
+        matchStreak = 0;
     }
 
     public void PlayPauseGame(bool pause)
@@ -131,18 +132,18 @@ public class GameManager : MonoBehaviour
 #endif
     }
 
-    private void OnPauseChanged(bool pause)
+    public void ResetGame()
     {
-
-    }
-
-    private void ResetGame()
-    {
+        IsPaused = false;
         warningCard.SetActive(false);
         flippedCards.Clear();
         _scoreManager.ResetScore();
-        IsPaused = false; // Ensure the game is not paused at the start
         _gridManager.ResetGrid();
+    }
+
+    public void RemoveCard(Card card)
+    {
+        flippedCards.Remove(card);
     }
 
     private void SetCardCount(int count)
@@ -155,28 +156,24 @@ public class GameManager : MonoBehaviour
     {
         if (flippedCards[0].UniqueId != flippedCards[1].UniqueId)
         {
-            matchStreak = 0;
-            ResetNonMatchingCard(1);
+            ResetFlippedCards(1);
             _soundManager.PlayMismatchSound();
             return;
         }
 
-        Matching();
+        MatchCards();
     }
 
-    private void Matching()
+    private void MatchCards()
     {
         matchStreak++;
         _scoreManager.UpdateScore(matchStreak);
         _soundManager.PlayMatchSound();
 
-        flippedCards[0].HideCard();
-        flippedCards[1].HideCard();
-        RemoveCard(flippedCards[1]);
-        RemoveCard(flippedCards[0]);
+        flippedCards[0].DisableCard();//Also remove the card
+        flippedCards[0].DisableCard();//the card 1 become 0
 
         cardCount -= 2;
-
         CheckWin();
     }
 
@@ -191,24 +188,15 @@ public class GameManager : MonoBehaviour
     private void LevelCompleted()
     {
         Debug.Log("YOU WON!");
-
         _timeManager.StopCountdown(out int timeLeft);
         _scoreManager.FinalScoreUpdate(timeLeft);
-
         _soundManager.PlayWinSound();
         _menuManager.ShowHideEndLevelMenu(true);
     }
 
-    private void ResetNonMatchingCard(int resetDelay)
+    private void ResetFlippedCards(int delay)
     {
-        flippedCards[0].ResetCard(resetDelay);
-        flippedCards[1].ResetCard(resetDelay);
-        RemoveCard(flippedCards[1]);
-        RemoveCard(flippedCards[0]);
-    }
-
-    private void RemoveCard(Card card)
-    {
-        flippedCards.Remove(card);
+        flippedCards[0].FlipCardBack(delay);
+        flippedCards[0].FlipCardBack(delay);
     }
 }

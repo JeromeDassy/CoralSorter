@@ -17,20 +17,18 @@ public class Card : MonoBehaviour
 
     public int UniqueId { get; private set; }
 
+    private SoundManager _soundManager;
+    private GameManager _gameManager;
+
     void Start()
     {
         cardImage = GetComponent<Image>();
         cardButton = GetComponent<Button>();
         cardButton.onClick.AddListener(OnCardClicked);
         cardImage.sprite = cardBack;
-    }
 
-    void OnEnable()
-    {
-        if (cardButton != null)
-        {
-            cardButton.interactable = true;
-        }
+        _soundManager = SoundManager.Instance;
+        _gameManager = GameManager.Instance;
     }
 
     public void SetCardData(CardData data)
@@ -41,24 +39,31 @@ public class Card : MonoBehaviour
 
     public void OnCardClicked()
     {
-        if (isFlipped || !cardButton.enabled) return;
+        if (isFlipped) return;
 
-        cardButton.enabled = false;
-        StartCoroutine(FlipCard());
+        StartCoroutine(AnimFlipCardFront());
     }
 
-    public void ResetCard(int delay)
+    public void FlipCardBack(int delay)
     {
-        //GameManager.Instance.RemoveCard(this);
         CheckRunningBackRoutine();
-        flipCardBackRoutine = StartCoroutine(FlipCardBack(delay));
+        flipCardBackRoutine = StartCoroutine(AnimFlipCardBack(delay));
     }
 
-    public void HideCard()
+    public void ResetCard()
     {
-        //GameManager.Instance.RemoveCard(this);
+        isFlipped = false;
+        cardButton.interactable = true;
+        cardImage.sprite = cardBack;
+        transform.localScale = Vector3.one;
+        transform.rotation = Quaternion.identity;
+    }
+
+    public void DisableCard()
+    {
         CheckRunningBackRoutine();
         cardButton.interactable = false;
+        _gameManager.RemoveCard(this);
     }
 
     private void CheckRunningBackRoutine()
@@ -70,39 +75,47 @@ public class Card : MonoBehaviour
         }
     }
 
-    private IEnumerator FlipCard()
+    private IEnumerator AnimFlipCardFront()
     {
-        SoundManager.Instance.PlayFlipSound();
+        _soundManager.PlayFlipSound();
 
-        yield return StartCoroutine(FlipCardRotation(Vector3.zero, Vector3.up * 90, cardFront));
+        yield return StartCoroutine(AnimFlipCardRotation(Vector3.zero, Vector3.up * 90, cardFront));
         transform.localScale = new Vector3(-1, 1, 1);
-        yield return StartCoroutine(FlipCardRotation(Vector3.up * 90, Vector3.up * 180));
+        yield return StartCoroutine(AnimFlipCardRotation(Vector3.up * 90, Vector3.up * 180));
 
-        ResetCard(5);
+        FlipCardBack(5);
         isFlipped = true;
-        GameManager.Instance.CardFlipped(this);
+        _gameManager.CardFlipped(this);
     }
 
-    private IEnumerator FlipCardBack(int delay)
+    private IEnumerator AnimFlipCardBack(int delay)
     {
-        yield return new WaitForSeconds(delay);
-
-        while (GameManager.Instance.IsPaused)
+        float elapsedTime = 0f;
+        while (elapsedTime < delay)
         {
-            yield return null;
+            if (GameManager.Instance.IsPaused)
+            {
+                yield return null;
+            }
+            else
+            {
+                elapsedTime += Time.deltaTime;
+                yield return null;
+            }
         }
 
-        SoundManager.Instance.PlayFlipSound();
+        _gameManager.RemoveCard(this);
+        _soundManager.PlayFlipSound();
 
-        yield return StartCoroutine(FlipCardRotation(Vector3.up * 180, Vector3.up * 90, cardBack));
-        transform.localScale = new Vector3(1, 1, 1);
-        yield return StartCoroutine(FlipCardRotation(Vector3.up * 90, Vector3.zero));
+        yield return StartCoroutine(AnimFlipCardRotation(Vector3.up * 180, Vector3.up * 90, cardBack));
+        transform.localScale = Vector3.one;
+        yield return StartCoroutine(AnimFlipCardRotation(Vector3.up * 90, Vector3.zero));
 
         isFlipped = false;
-        cardButton.enabled = true;
     }
 
-    private IEnumerator FlipCardRotation(Vector3 fromRotation, Vector3 toRotation, Sprite newSprite = null)
+
+    private IEnumerator AnimFlipCardRotation(Vector3 fromRotation, Vector3 toRotation, Sprite newSprite = null)
     {
         float time = 0.2f;
         float halfTime = time / 2f;
@@ -110,7 +123,7 @@ public class Card : MonoBehaviour
 
         while (elapsedTime < halfTime)
         {
-            if (!GameManager.Instance.IsPaused)
+            if (!_gameManager.IsPaused)
             {
                 transform.rotation = Quaternion.Slerp(Quaternion.Euler(fromRotation), Quaternion.Euler(toRotation), elapsedTime / halfTime);
                 elapsedTime += Time.deltaTime;

@@ -2,11 +2,25 @@ using UnityEngine;
 
 public class SaveLoadManager : MonoBehaviour
 {
+    public static SaveLoadManager Instance;
+    
     private const string ScoreKey = "Score";
+    
+    private ScoreManager _scoreManager;
+
+    void Awake()
+    {
+        Instance = this;
+    }
+
+    void Start()
+    {
+        _scoreManager = ScoreManager.Instance;
+    }
 
     public void SaveGame()
     {
-        PlayerPrefs.SetInt(ScoreKey, ScoreManager.Instance.GetCurrentScore());
+        PlayerPrefs.SetInt(ScoreKey, _scoreManager.GetCurrentScore());
         PlayerPrefs.Save();
     }
 
@@ -14,7 +28,7 @@ public class SaveLoadManager : MonoBehaviour
     {
         if (PlayerPrefs.HasKey(ScoreKey))
         {
-            ScoreManager.Instance.SetScore(PlayerPrefs.GetInt(ScoreKey));
+            _scoreManager.SetScore(PlayerPrefs.GetInt(ScoreKey));
         }
     }
 }

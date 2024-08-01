@@ -10,12 +10,18 @@ public class MenuManager : MonoBehaviour
     [SerializeField] private GameObject endLevelMenu;
 
     private GameObject[] menus;
+    private GameManager _gameManager;
 
     void Awake()
     {
         Instance = this;
 
         menus = new GameObject[] { mainMenu, pauseMenu, gameOverMenu, endLevelMenu };
+    }
+
+    private void Start()
+    {
+        _gameManager = GameManager.Instance;
     }
 
     public void ShowMenu(GameObject menuToShow, bool show)
@@ -33,12 +39,13 @@ public class MenuManager : MonoBehaviour
         ShowMenu(mainMenu, show);
         if (show)
         {
-            GameManager.Instance.IsPaused = false;
+            _gameManager.IsPaused = false;
+            _gameManager.ResetGame();
         }
     }
     public void ShowHidePauseMenu(bool show)
     {
         ShowMenu(pauseMenu, show);
-        GameManager.Instance.IsPaused = show;
+        _gameManager.IsPaused = show;
     }
 }
