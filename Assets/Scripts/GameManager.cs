@@ -79,42 +79,6 @@ public class GameManager : MonoBehaviour
         _menuManager.ShowHideMainMenu(false);
     }
 
-    public void RemoveCard(Card card)
-    {
-        flippedCards.Remove(card);
-    }
-
-    public void PlayPauseGame(bool pause)
-    {
-        IsPaused = pause;
-    }
-
-    public void GameOver()
-    {
-        Debug.Log("GAME OVER!");
-        _menuManager.ShowHideGameOverMenu(true);
-        _soundManager.PlayGameOverSound();
-    }
-
-    private void OnPauseChanged(bool pause)
-    {
-
-    }
-
-    private void ResetGame()
-    {
-        flippedCards.Clear();
-        _scoreManager.ResetScore();
-        IsPaused = false; // Ensure the game is not paused at the start
-        _gridManager.ResetGrid();
-    }
-
-    private void SetCardCount(int count)
-    {
-        cardCount = count;
-        _timeManager.StartCountdown(count);
-    }
-
     public void CardFlipped(Card card)
     {
         if (card.UniqueId == int.MinValue)
@@ -146,6 +110,47 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public void PlayPauseGame(bool pause)
+    {
+        IsPaused = pause;
+    }
+
+    public void GameOver()
+    {
+        Debug.Log("GAME OVER!");
+        _menuManager.ShowHideGameOverMenu(true);
+        _soundManager.PlayGameOverSound();
+    }
+
+    public void ExitGame()
+    {
+#if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+#else
+        Application.Quit();
+#endif
+    }
+
+    private void OnPauseChanged(bool pause)
+    {
+
+    }
+
+    private void ResetGame()
+    {
+        warningCard.SetActive(false);
+        flippedCards.Clear();
+        _scoreManager.ResetScore();
+        IsPaused = false; // Ensure the game is not paused at the start
+        _gridManager.ResetGrid();
+    }
+
+    private void SetCardCount(int count)
+    {
+        cardCount = count;
+        _timeManager.StartCountdown(count);
+    }
+
     private void CheckMatch()
     {
         if (flippedCards[0].UniqueId != flippedCards[1].UniqueId)
@@ -164,8 +169,11 @@ public class GameManager : MonoBehaviour
         matchStreak++;
         _scoreManager.UpdateScore(matchStreak);
         _soundManager.PlayMatchSound();
+
         flippedCards[0].HideCard();
         flippedCards[1].HideCard();
+        RemoveCard(flippedCards[1]);
+        RemoveCard(flippedCards[0]);
 
         cardCount -= 2;
 
@@ -189,12 +197,18 @@ public class GameManager : MonoBehaviour
 
         _soundManager.PlayWinSound();
         _menuManager.ShowHideEndLevelMenu(true);
-
     }
 
     private void ResetNonMatchingCard(int resetDelay)
     {
         flippedCards[0].ResetCard(resetDelay);
         flippedCards[1].ResetCard(resetDelay);
+        RemoveCard(flippedCards[1]);
+        RemoveCard(flippedCards[0]);
+    }
+
+    private void RemoveCard(Card card)
+    {
+        flippedCards.Remove(card);
     }
 }

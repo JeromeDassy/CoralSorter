@@ -25,6 +25,14 @@ public class Card : MonoBehaviour
         cardImage.sprite = cardBack;
     }
 
+    void OnEnable()
+    {
+        if (cardButton != null)
+        {
+            cardButton.interactable = true;
+        }
+    }
+
     public void SetCardData(CardData data)
     {
         cardFront = data.image;
@@ -41,14 +49,16 @@ public class Card : MonoBehaviour
 
     public void ResetCard(int delay)
     {
+        //GameManager.Instance.RemoveCard(this);
         CheckRunningBackRoutine();
         flipCardBackRoutine = StartCoroutine(FlipCardBack(delay));
     }
 
     public void HideCard()
     {
+        //GameManager.Instance.RemoveCard(this);
         CheckRunningBackRoutine();
-        cardImage.enabled = false;
+        cardButton.interactable = false;
     }
 
     private void CheckRunningBackRoutine()
@@ -81,8 +91,6 @@ public class Card : MonoBehaviour
         {
             yield return null;
         }
-
-        GameManager.Instance.RemoveCard(this);
 
         SoundManager.Instance.PlayFlipSound();
 
