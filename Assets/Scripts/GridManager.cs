@@ -143,7 +143,11 @@ public class GridManager : MonoBehaviour
 
     private void SetGridLayout()
     {
+#if UNITY_ANDROID
+        gridLayoutGroup.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+#else
         gridLayoutGroup.constraint = GridLayoutGroup.Constraint.FixedRowCount;
+#endif
         gridLayoutGroup.constraintCount = rows;
 
         RectTransform rectTransform = gridLayoutGroup.GetComponent<RectTransform>();
