@@ -20,52 +20,45 @@ public class GridManager : MonoBehaviour
     private List<CardData> shuffledCardData;
     private GridLayoutGroup gridLayoutGroup;
     private readonly Queue<GameObject> cardPool = new Queue<GameObject>();
-    private readonly int poolSize = 30;
-    private Vector2 lastScreenSize;
+    private const int poolSize = 30;
+    private int lastWidth, lastHeight;
 
     void Awake()
     {
         Instance = this;
-        lastScreenSize = new Vector2(Screen.width, Screen.height);
         gridLayoutGroup = GetComponent<GridLayoutGroup>();
+        lastWidth = Screen.width;
+        lastHeight = Screen.height;
+
         LoadCardImages();
         InitializeCardPool();
     }
 
     void Update()
     {
-        if (Screen.width != lastScreenSize.x || Screen.height != lastScreenSize.y)
+        if (Screen.width != lastWidth || Screen.height != lastHeight)
         {
-            lastScreenSize = new Vector2(Screen.width, Screen.height);
+            lastWidth = Screen.width;
+            lastHeight = Screen.height;
             ResizeGridCells();
         }
     }
 
     #region Save&Load
-    public Vector2 GetGridDimensions()
-    {
-        return new Vector2(rows, columns);
-    }
+    public Vector2 GetGridDimensions() => new Vector2(rows, columns);
 
     public List<CardData> GetCardDataList()
     {
-        List<CardData> cardDataList = new List<CardData>();
-
         int gridSize = rows * columns;
-        int i = 0;
-        foreach (Transform child in transform)
-        {
-            if(i == gridSize)
-            {
-                break;
-            }
+        List<CardData> cardDataList = new List<CardData>(gridSize);
 
-            Card card = child.GetComponent<Card>();
+        for (int i = 0; i < transform.childCount && i < gridSize; i++)
+        {
+            Card card = transform.GetChild(i).GetComponent<Card>();
             if (card != null)
             {
                 cardDataList.Add(new CardData(card.GetCardFront(), card.UniqueId, card.IsMatched));
             }
-            i++;
         }
         return cardDataList;
     }
@@ -80,14 +73,10 @@ public class GridManager : MonoBehaviour
         int matched = 0;
         foreach (var cardData in cardDataList)
         {
-            GameObject cardObject = GetPooledCard();
-            Card card = cardObject.GetComponent<Card>();
+            Card card = GetPooledCard().GetComponent<Card>();
             card.SetCardData(cardData);
             card.SetMatched(cardData.isMatched);
-            if (cardData.isMatched)
-            {
-                matched++;
-            }
+            if (cardData.isMatched) matched++;
         }
         matchedCard = matched;
     }
@@ -105,9 +94,10 @@ public class GridManager : MonoBehaviour
     public void ResetGrid()
     {
         shuffledCardData?.Clear();
-                
-        foreach (Transform child in transform)
+
+        for (int i = 0; i < transform.childCount; i++)
         {
+            Transform child = transform.GetChild(i);
             if (child.gameObject.activeInHierarchy)
             {
                 ReturnCardToPool(child.gameObject);
@@ -121,8 +111,8 @@ public class GridManager : MonoBehaviour
         {
             GameObject cardObj = Instantiate(cardPrefab, transform);
             cardObj.SetActive(false);
+            cardObj.name = $"{cardPrefab.name}_{i}";
             cardPool.Enqueue(cardObj);
-            cardObj.name += $"_{i}";
         }
     }
 
@@ -139,8 +129,7 @@ public class GridManager : MonoBehaviour
 
     private void ReturnCardToPool(GameObject go)
     {
-        Card card = go.GetComponent<Card>();
-        card.ResetCard();
+        go.GetComponent<Card>().ResetCard();
         go.SetActive(false);
         cardPool.Enqueue(go);
     }
@@ -151,49 +140,37 @@ public class GridManager : MonoBehaviour
         cardImages = new List<Sprite>(Resources.LoadAll<Sprite>(folderPath));
     }
 
-    private void ResizeGridCells()
+    private void ApplyCellSizing()
     {
-        if (gridLayoutGroup == null)
-            gridLayoutGroup = GetComponent<GridLayoutGroup>();
-
         RectTransform rectTransform = gridLayoutGroup.GetComponent<RectTransform>();
 
         float cellWidth = (rectTransform.rect.width - spacing * (columns - 1)) / columns;
         float cellHeight = (rectTransform.rect.height - spacing * (rows - 1)) / rows;
-
         float cellSize = Mathf.Min(cellWidth, cellHeight);
 
         gridLayoutGroup.cellSize = new Vector2(cellSize, cellSize);
         gridLayoutGroup.spacing = new Vector2(spacing, spacing);
     }
 
+    public void ResizeGridCells() => ApplyCellSizing();
 
     private void SetGridLayout()
     {
-        int totalCards = rows * columns;
-
         int height = Screen.height;
         int width = Screen.width;
-        gridLayoutGroup.constraint = (width < height) ?  GridLayoutGroup.Constraint.FixedRowCount : GridLayoutGroup.Constraint.FixedColumnCount;
-        
-        int count = Mathf.Max(rows, columns);
-        gridLayoutGroup.constraintCount = count;
+        gridLayoutGroup.constraint = (width < height)
+            ? GridLayoutGroup.Constraint.FixedRowCount
+            : GridLayoutGroup.Constraint.FixedColumnCount;
 
-        RectTransform rectTransform = gridLayoutGroup.GetComponent<RectTransform>();
-
-        float cellWidth = (rectTransform.rect.width - spacing * (columns - 1)) / columns;
-        float cellHeight = (rectTransform.rect.height - spacing * (rows - 1)) / rows;
-
-        float cellSize = Mathf.Min(cellWidth, cellHeight);
-
-        gridLayoutGroup.cellSize = new Vector2(cellSize, cellSize);
-        gridLayoutGroup.spacing = new Vector2(spacing, spacing);
+        gridLayoutGroup.constraintCount = Mathf.Max(rows, columns);
+        ApplyCellSizing();
     }
 
     private void ShuffleAndAssignImages()
     {
-        int numPairs = (rows * columns) / 2;
-        shuffledCardData = new List<CardData>(numPairs * 2 + 1);
+        int total = rows * columns;
+        int numPairs = total / 2;
+        shuffledCardData = new List<CardData>(total);
 
         for (int i = 0; i < numPairs; i++)
         {
@@ -203,7 +180,7 @@ public class GridManager : MonoBehaviour
             shuffledCardData.Add(new CardData(image, uniqueId));
         }
 
-        if ((rows * columns) % 2 != 0)
+        if (total % 2 != 0)
         {
             shuffledCardData.Add(new CardData(oddCard, int.MinValue));
         }
@@ -215,8 +192,7 @@ public class GridManager : MonoBehaviour
     {
         foreach (var cardData in shuffledCardData)
         {
-            GameObject card = GetPooledCard();
-            card.GetComponent<Card>().SetCardData(cardData);
+            GetPooledCard().GetComponent<Card>().SetCardData(cardData);
         }
     }
 }
