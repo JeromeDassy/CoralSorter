@@ -1,7 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 
 [RequireComponent(typeof(GridLayoutGroup))]
 public class GridManager : MonoBehaviour
@@ -22,13 +21,24 @@ public class GridManager : MonoBehaviour
     private GridLayoutGroup gridLayoutGroup;
     private readonly Queue<GameObject> cardPool = new Queue<GameObject>();
     private readonly int poolSize = 30;
+    private Vector2 lastScreenSize;
 
     void Awake()
     {
         Instance = this;
+        lastScreenSize = new Vector2(Screen.width, Screen.height);
         gridLayoutGroup = GetComponent<GridLayoutGroup>();
         LoadCardImages();
         InitializeCardPool();
+    }
+
+    void Update()
+    {
+        if (Screen.width != lastScreenSize.x || Screen.height != lastScreenSize.y)
+        {
+            lastScreenSize = new Vector2(Screen.width, Screen.height);
+            ResizeGridCells();
+        }
     }
 
     #region Save&Load
@@ -141,18 +151,39 @@ public class GridManager : MonoBehaviour
         cardImages = new List<Sprite>(Resources.LoadAll<Sprite>(folderPath));
     }
 
-    private void SetGridLayout()
+    private void ResizeGridCells()
     {
-#if UNITY_ANDROID
-        gridLayoutGroup.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-#else
-        gridLayoutGroup.constraint = GridLayoutGroup.Constraint.FixedRowCount;
-#endif
-        gridLayoutGroup.constraintCount = rows;
+        if (gridLayoutGroup == null)
+            gridLayoutGroup = GetComponent<GridLayoutGroup>();
 
         RectTransform rectTransform = gridLayoutGroup.GetComponent<RectTransform>();
+
         float cellWidth = (rectTransform.rect.width - spacing * (columns - 1)) / columns;
         float cellHeight = (rectTransform.rect.height - spacing * (rows - 1)) / rows;
+
+        float cellSize = Mathf.Min(cellWidth, cellHeight);
+
+        gridLayoutGroup.cellSize = new Vector2(cellSize, cellSize);
+        gridLayoutGroup.spacing = new Vector2(spacing, spacing);
+    }
+
+
+    private void SetGridLayout()
+    {
+        int totalCards = rows * columns;
+
+        int height = Screen.height;
+        int width = Screen.width;
+        gridLayoutGroup.constraint = (width < height) ?  GridLayoutGroup.Constraint.FixedRowCount : GridLayoutGroup.Constraint.FixedColumnCount;
+        
+        int count = Mathf.Max(rows, columns);
+        gridLayoutGroup.constraintCount = count;
+
+        RectTransform rectTransform = gridLayoutGroup.GetComponent<RectTransform>();
+
+        float cellWidth = (rectTransform.rect.width - spacing * (columns - 1)) / columns;
+        float cellHeight = (rectTransform.rect.height - spacing * (rows - 1)) / rows;
+
         float cellSize = Mathf.Min(cellWidth, cellHeight);
 
         gridLayoutGroup.cellSize = new Vector2(cellSize, cellSize);
